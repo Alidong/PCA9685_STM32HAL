@@ -15,5 +15,6 @@
 |接口                                        |功能描述   |
 |:------------------------------               |:----- |
 |static uint8_t PCA9685_read(uint8_t startAddress)                        |实现使用i2c从PCA9685寄存器中读取一个字节|
-|static void PCA9685_write(uint8_t startAddress, uint8_t data)                    |实现使用i2c往PCA9685寄存器中写入一个字节|
+|static void PCA9685_write_onebyte(uint8_t startAddress, uint8_t data)                    |实现使用i2c往PCA9685寄存器中写入一个字节|
+|static void PCA9685_write_bytes(uint8_t startAddress, uint8_t *data,uint8_t size)                   |实现使用i2c往PCA9685寄存器中写入多个字节|
 |static void delay(uint16_t ms)                   |实现毫秒延时|
