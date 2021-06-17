@@ -22,7 +22,7 @@
 #define ENABLE_DEBUG_OUTPUT true
 static uint8_t PCA9685_read(uint8_t startAddress);
 static void PCA9685_write(uint8_t startAddress, uint8_t data);
-static uint8_t PCA9685_adrr;
+static uint8_t PCA9685_adrr=0;
 static void delay(uint16_t ms);
 void PCA9685_Reset(void)
 {
@@ -30,7 +30,7 @@ void PCA9685_Reset(void)
     delay(10);
 }
 
-void PCA9685_Init(uint8_t addr)
+void PCA9685_Init(uint8_t addr,float freq)
 {
     PCA9685_adrr=addr;
 //    for(uint8_t add=0;add<0xFF;add++)
@@ -39,7 +39,7 @@ void PCA9685_Init(uint8_t addr)
 //        printf("is addr=%02x ready \r\n",add);
 //    }
     PCA9685_Reset();
-    SetPWMFreq(1000);
+    SetPWMFreq(freq);
     delay(10);
 }
 void SetPWMFreq(float freq)
@@ -58,47 +58,47 @@ void SetPWMFreq(float freq)
     prescale = (uint8_t)prescaleval;
     
     oldmode = PCA9685_read(PCA9685_MODE1);
-    printf("oldmode=%02x\r\n",oldmode);
+    //printf("oldmode=%02d\r\n",oldmode);
     newmode = (oldmode & ~MODE1_RESTART) | MODE1_SLEEP; // sleep
     PCA9685_write(PCA9685_MODE1, newmode); // go to sleep
     PCA9685_write(PCA9685_PRESCALE, prescale); // set the prescaler
-    printf("set the prescaler=%d\r\n",prescale);
+    //printf("set the prescaler=%d\r\n",prescale);
     PCA9685_write(PCA9685_MODE1, oldmode);
     delay(5);
     // This sets the MODE1 register to turn on auto increment.
     PCA9685_write(PCA9685_MODE1, oldmode | MODE1_RESTART | MODE1_AI);
-    delay(10);
-    printf("Read prescale=%d\r\n",PCA9685_read(PCA9685_PRESCALE));
+    //printf("Read prescale=%d\r\n",PCA9685_read(PCA9685_PRESCALE));
 
 }
-void SetPWM(uint32_t num,uint32_t on,uint32_t off)
+void SetPWM(uint8_t num,uint16_t on,uint16_t off)
 {
+    HAL_StatusTypeDef write_status=HAL_OK;
     uint8_t tx_buff[4];
     tx_buff[0]=on;
     tx_buff[1]=(on >> 8);
     tx_buff[2]=off;
     tx_buff[3]=(off >> 8);
-    HAL_I2C_Mem_Write(&hi2c1,PCA9685_adrr,I2C_MEMADD_SIZE_8BIT,PCA9685_LED0_ON_L + 4 * num,tx_buff,4,10000);   
+    write_status=HAL_I2C_Mem_Write(&hi2c1,PCA9685_adrr,(PCA9685_LED0_ON_L + 4 * num),I2C_MEMADD_SIZE_8BIT,tx_buff,4,1000); 
+    if(write_status!=HAL_OK)
+      printf("SetPWM Err! %d\r\n",write_status);  
 }
 
 static uint8_t PCA9685_read(uint8_t startAddress) {
     //Send address to start reading from.
     uint8_t data;
     HAL_StatusTypeDef read_status=HAL_OK;
-    read_status=HAL_I2C_Mem_Read(&hi2c1,PCA9685_adrr,I2C_MEMADD_SIZE_8BIT,startAddress,&data,1,10000);
+    read_status=HAL_I2C_Mem_Read(&hi2c1,PCA9685_adrr,startAddress,I2C_MEMADD_SIZE_8BIT,&data,1,1000);
     if(read_status==HAL_OK)
       return data;
     else
       printf("Read Err! %d\r\n",read_status);
 }
 
-static void PCA9685_writeonebyte(uint8_t startAddress, uint8_t data) {
+static void PCA9685_write(uint8_t startAddress, uint8_t data) {
     //Send address to start reading from. 
     HAL_StatusTypeDef write_status=HAL_OK;
-    write_status=HAL_I2C_Mem_Write(&hi2c1,PCA9685_adrr,I2C_MEMADD_SIZE_8BIT,startAddress,&data,1,10000);
-    if(write_status==HAL_OK)
-      printf("Write ok!\r\n");
-    else
+    write_status=HAL_I2C_Mem_Write(&hi2c1,PCA9685_adrr,startAddress,I2C_MEMADD_SIZE_8BIT,&data,1,1000);
+    if(write_status!=HAL_OK)
       printf("Write Err! %d\r\n",write_status);
 }
 static void delay(uint16_t ms){
